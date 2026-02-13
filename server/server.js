@@ -1,4 +1,4 @@
-import express, { urlencoded } from "express";
+import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import predict from "./controller/predict.controller.js";
@@ -21,7 +21,8 @@ app.use(
     allowedHeaders: ["Content-Type"],
   }),
 );
-app.use(express.json(urlencoded({ extended: true })));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/predict", predict);
 

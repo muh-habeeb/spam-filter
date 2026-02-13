@@ -2,7 +2,7 @@
 
 # Start FastAPI ML Service in background
 echo "Starting FastAPI ML Service on port 8000..."
-cd /app/spam_filter/main
+cd /app/ml-service/main
 python main.py &
 
 # Wait for FastAPI to initialize
