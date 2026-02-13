@@ -65,7 +65,7 @@ COPY . .
 RUN cd ml-service/training && python train.py
 
 # Install Node dependencies
-RUN cd server && npm install --production
+RUN cd server && npm install --omit=dev
 
 # Make startup script executable
 RUN chmod +x start.sh
