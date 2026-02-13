@@ -24,10 +24,8 @@ REFACTORING.md
 .vscode/
 .idea/
 
-# Environment
-.env
+# Environment (local only, will be created in Docker)
 .env.local
-server/.env
 
 # Logs
 *.log

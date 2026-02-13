@@ -24,6 +24,11 @@ RUN cd ml-service/training && python train.py
 # Install Node dependencies
 RUN cd server && npm install --omit=dev
 
+# Ensure .env file exists in server directory for Docker environment
+RUN echo "ML_API_URL=http://localhost:8000" > /app/server/.env && \
+    echo "PORT=5000" >> /app/server/.env && \
+    echo "NODE_ENV=production" >> /app/server/.env
+
 # Make startup script executable
 RUN chmod +x start.sh
 
