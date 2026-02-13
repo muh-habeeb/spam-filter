@@ -62,7 +62,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Train model during build
-RUN cd spam_filter/training && python train.py
+RUN cd ml-service/training && python train.py
 
 # Install Node dependencies
 RUN cd server && npm install --production
