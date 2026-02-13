@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Node.js
+node_modules/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+REFACTORING.md
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+server/.env
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Model files (will be generated during build)
+spam_filter/training/*.pkl
+spam_filter/training/training_metrics.json
