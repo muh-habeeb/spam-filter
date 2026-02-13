@@ -9,7 +9,8 @@ env/
 ENV/
 .venv
 
-# Node.js
+# Node.js (not used in Docker)
+server/
 node_modules/
 
 # Git
@@ -19,12 +20,14 @@ node_modules/
 # Documentation
 *.md
 REFACTORING.md
+RENDER_DEPLOY.md
+LOCAL_SETUP.md
 
 # IDE
 .vscode/
 .idea/
 
-# Environment (local only, will be created in Docker)
+# Environment
 .env.local
 
 # Logs
@@ -34,6 +37,9 @@ REFACTORING.md
 .DS_Store
 Thumbs.db
 
+# Scripts not needed
+start.sh
+
 # Model files (will be generated during build)
-spam_filter/training/*.pkl
-spam_filter/training/training_metrics.json
+ml-service/training/*.pkl
+ml-service/training/training_metrics.json

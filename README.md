@@ -21,7 +21,7 @@ Machine learning-based spam detection system using FastAPI and Node.js.
 docker build -t spam-api .
 
 # Run the container
-docker run -p 8000:8000 -p 5000:5000 spam-api
+docker run -p 8000:8000 spam-api
 ```
 
 **🔍 Important - Docker Networking:**
@@ -29,17 +29,15 @@ docker run -p 8000:8000 -p 5000:5000 spam-api
 When the container starts, you'll see:
 ```
 INFO: Uvicorn running on http://0.0.0.0:8000
-Server is running on port 5000
 ```
 
 **What does `0.0.0.0` mean?**
 - `0.0.0.0` means the server is listening on ALL network interfaces inside the container
 - You should access it using `localhost` on your machine
 
-**Access the services:**
+**Access the service:**
 - **FastAPI**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
-- **Node.js Gateway**: http://localhost:5000
 
 The `-p 8000:8000` maps container port 8000 to your localhost:8000, so even though the container shows `0.0.0.0`, you use `localhost` in your browser!
 
@@ -63,22 +61,14 @@ python train.py
 cd ..\..
 ```
 
-**Step 2: Start FastAPI (Terminal 1)**
+**Step 2: Start FastAPI**
 
 ```powershell
 cd ml-service\main
 python main.py
 ```
 ✅ FastAPI runs at: http://localhost:8000
-
-**Step 3: Start Node.js Gateway (Terminal 2)**
-
-```powershell
-cd server
-npm install
-npm run dev
-```
-✅ Gateway runs at: http://localhost:5000
+✅ API Docs at: http://localhost:8000/docs
 
 ---
 
@@ -93,8 +83,16 @@ Invoke-RestMethod -Uri "http://localhost:5000/api/predict" -Method Post -Body $b
 ```
 
 **cURL:**
+
+**PowerShell:**
+```powershell
+$body = @{ text = "Congratulations! You won a free prize!" } | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:8000/predict" -Method Post -Body $body -ContentType "application/json"
+```
+
+**cURL:**
 ```bash
-curl -X POST http://localhost:5000/api/predict \
+curl -X POST http://localhost:8000/predict \
   -H "Content-Type: application/json" \
   -d '{"text": "Congratulations! You won a free prize!"}'
 ```
@@ -108,27 +106,16 @@ curl -X POST http://localhost:5000/api/predict \
 }
 ```
 
-### Direct FastAPI Call
+### Check Health
 
 ```powershell
-$body = @{ text = "Hey, are we still meeting tomorrow?" } | ConvertTo-Json
-Invoke-RestMethod -Uri "http://localhost:8000/predict" -Method Post -Body $body -ContentType "application/json"
+curl http://localhost:8000/
 ```
 
 **Response:**
 ```json
 {
-  "message": "Hey, are we still meeting tomorrow?",
-  "spam": false,
-  "confidence": 0.987
-}
-```
-
----
-
-## 📁 Project Structure
-
-```
+  "message": "Spam Filter API is running. Use POST /predict to classify messages."
 spam-filter/
 ├── ml-service/              # Python FastAPI service
 │   ├── main/
@@ -156,14 +143,12 @@ spam-filter/
 
 ### Environment Variables
 
-**server/.env** (for local development):
-```env
-ML_API_URL=http://localhost:8000
-PORT=5000
-NODE_ENV=development
-```
+**Optional** - FastAPI will use port 8000 by default.
 
-**Note:** For Docker, environment variables are automatically set during build.
+To change the port, set:
+```bash
+PORT=8000  # or any other port
+```
 
 ---
 
@@ -171,11 +156,10 @@ NODE_ENV=development
 
 ### What Happens When You Run Docker?
 
-1. **Container starts** and builds Python + Node.js environment
+1. **Container starts** with Python environment
 2. **Model is trained** during image build (or uses existing model)
-3. **FastAPI starts** on port 8000 (shows as 0.0.0.0:8000 inside container)
-4. **Node.js starts** on port 5000
-5. **Ports are exposed** to your host machine via `-p 8000:8000 -p 5000:5000`
+3. **FastAPI starts** on port 8000
+4. **Port is exposed** to your host machine via `-p 8000:8000`
 
 ### Understanding 0.0.0.0 vs localhost
 
@@ -194,23 +178,18 @@ NODE_ENV=development
 ## 🧪 Testing
 
 ### Test Node.js Gateway
-```powershell
-curl http://localhost:5000/
-```
-
-### Test FastAPI Health
+```powersHealth Check
 ```powershell
 curl http://localhost:8000/
 ```
 
-### Test Prediction
+### Test Spam Prediction
 ```powershell
 $spam = @{ text = "YOU WON $1000! Click here now!" } | ConvertTo-Json
 $ham = @{ text = "Meeting at 3pm tomorrow" } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://localhost:5000/api/predict" -Method Post -Body $spam -ContentType "application/json"
-Invoke-RestMethod -Uri "http://localhost:5000/api/predict" -Method Post -Body $ham -ContentType "application/json"
-```
+Invoke-RestMethod -Uri "http://localhost:8000/predict" -Method Post -Body $spam -ContentType "application/json"
+Invoke-RestMethod -Uri "http://localhost:8000
 
 ### Interactive API Documentation
 
@@ -297,34 +276,33 @@ docker build --no-cache -t spam-api .
 
 ### Deploy on Render (Recommended)
 
-See detailed guide: **[RENDER_DEPLOY.md](RENDER_DEPLOY.md)**
-
 **Quick Steps:**
 1. Push code to GitHub
 2. Create Web Service on Render
 3. Connect GitHub repository
-4. Select Docker environment
+4. Select **Docker** environment
 5. Deploy!
 
 Render will automatically:
 - Build the Docker image
 - Train the ML model
-- Start both services
-- Provide a public URL
+- Start FastAPI service
+- Provide a public URL (e.g., `https://your-app.onrender.com`)
 
-**Important for Render:**
-- Only ONE port is exposed (Render's PORT, usually 10000)
-- Node.js gateway runs on public port
-- FastAPI runs internally on port 8000
-- Gateway proxies requests to FastAPI
+**Access your deployed API:**
+```
+https://your-app.onrender.com/predict
+https://your-app.onrender.com/docs
+```
 
-### Other Platforms (Railway/Heroku)
+### Other Platforms
 
-The Docker setup works on any platform that supports Docker:
-- Railway: Same as Render
-- Heroku: Use `heroku.yml` or Docker deployment
-- DigitalOcean App Platform: Docker deployment
-- Google Cloud Run: Container deployment
+Works on any Docker-supporting platform:
+- Railway
+- Heroku
+- DigitalOcean App Platform
+- Google Cloud Run
+- AWS ECS
 
 ---
 
