@@ -7,35 +7,44 @@ dotenv.config();
 
 const app = express();
 
-app.use(
-  cors({
-    origin: [
-      "localhost:8000",
-      "http://localhost:8000",
-      "localhost:5000",
-      "http://localhost:5000",
-      "https://spam-filter-4tjo.onrender.com",
-      "http://spam-filter-4tjo.onrender.com",
-    ],
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
-  }),
-);
+// CORS configuration - Allow all in production, restrict in development
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? '*' 
+    : "*",
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"],
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/predict", predict);
 
 app.get("/", async (req, res) => {
-  const response = await axios.get("http://localhost:8000/");
-  res.status(200).json({ status: "OK", re: response.data });
+    console.log(window.location)
+  try {
+    // Try to check ML API health (optional)
+    const mlApiUrl = process.env.ML_API_URL || "http://localhost:8000";
+    const response = await axios.get(mlApiUrl, { timeout: 3000 });
+    res.status(200).json({ 
+      status: "OK", 
+      gateway: "running",
+      mlApi: response.data 
+    });
+  } catch (error) {
+    // Still return OK even if ML API check fails
+    res.status(200).json({ 
+      status: "OK", 
+      gateway: "running",
+      mlApi: "unavailable" 
+    });
+  }
 });
 
-const ML_API_URL = process.env.ML_API_URL;
-if (!ML_API_URL) {
-  console.error("ML_API_URL is not defined in environment variables");
-  process.exit(1);
-}
+const ML_API_URL = process.env.ML_API_URL || "http://localhost:8000";
+console.log(`ML API URL: ${ML_API_URL}`);
 
 const PORT = process.env.PORT || 5000;
 

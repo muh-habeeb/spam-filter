@@ -1,342 +1,347 @@
-# Spam Detection API (FastAPI + Node.js Gateway)
+# Spam Detection API
 
-## Overview
+Machine learning-based spam detection system using FastAPI and Node.js.
 
-A production-ready machine learning-based spam detection system with:
+## 🎯 Features
 
-- **FastAPI ML Service**: Python-based ML inference API
-- **Node.js Gateway**: Express.js API gateway for request handling
 - **ML Model**: TF-IDF + Multinomial Naive Bayes classifier
-- **Dataset**: SMS Spam Collection (~5,500 messages)
-- **Accuracy**: ~95-98%
-
-## Architecture
-
-```
-Client → Node.js API Gateway → FastAPI ML Service → ML Model
-```
-
-The system uses a microservices architecture where:
-- Node.js handles client requests and provides a gateway
-- FastAPI serves ML predictions
-- Models are pre-trained and loaded at startup
+- **FastAPI Backend**: Python ML inference service
+- **Node.js Gateway**: Express API gateway
+- **Accuracy**: ~95-98% on SMS Spam Collection dataset
+- **Docker Ready**: Single container deployment
 
 ---
 
-## Project Structure
+## 🚀 Quick Start
 
+### Option 1: Docker (Recommended)
+
+```powershell
+# Build the image
+docker build -t spam-api .
+
+# Run the container
+docker run -p 8000:8000 -p 5000:5000 spam-api
 ```
-spam-filter/
-├── spam_filter/           # Python FastAPI service
-│   ├── main/
-│   │   ├── main.py       # FastAPI application
-│   │   └── config.py     # Configuration settings
-│   └── training/
-│       ├── train.py      # Model training script
-│       ├── spam.csv      # Dataset
-│       ├── model.pkl     # Trained model (generated)
-│       └── vectorizer.pkl # TF-IDF vectorizer (generated)
-├── server/               # Node.js API gateway
-│   ├── server.js        # Express server
-│   ├── config/
-│   │   └── config.js    # Server configuration
-│   └── routes/
-│       ├── predict.routes.js  # Prediction endpoints
-│       └── health.routes.js   # Health check endpoints
-├── requirements.txt      # Python dependencies
-├── .gitignore           # Git ignore rules
-└── README.md            # Documentation
+
+**🔍 Important - Docker Networking:**
+
+When the container starts, you'll see:
 ```
+INFO: Uvicorn running on http://0.0.0.0:8000
+Server is running on port 5000
+```
+
+**What does `0.0.0.0` mean?**
+- `0.0.0.0` means the server is listening on ALL network interfaces inside the container
+- You should access it using `localhost` on your machine
+
+**Access the services:**
+- **FastAPI**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+- **Node.js Gateway**: http://localhost:5000
+
+The `-p 8000:8000` maps container port 8000 to your localhost:8000, so even though the container shows `0.0.0.0`, you use `localhost` in your browser!
 
 ---
 
-## Local Setup
+### Option 2: Local Development
 
-### Prerequisites
+**Step 1: Setup Python Service**
 
-- Python 3.8+
-- Node.js 14+
-- pip and npm
-
-### 1. Clone and Setup Environment
-
-```bash
-# Clone repository
-cd spam-filter
-
-# Copy environment files
-cp .env.example .env
-cp server/.env.example server/.env
-```
-
-### 2. Python FastAPI Service Setup
-
-```bash
-# Create virtual environment
+```powershell
+# Create and activate virtual environment
 python -m venv venv
-
-# Activate virtual environment
-# Windows:
-venv\Scripts\activate
-# Mac/Linux:
-source venv/bin/activate
+.\venv\Scripts\Activate.ps1
 
 # Install dependencies
 pip install -r requirements.txt
 
 # Train the model
-cd spam_filter/training
+cd ml-service\training
 python train.py
-cd ../..
+cd ..\..
 ```
 
-### 3. Node.js Gateway Setup
+**Step 2: Start FastAPI (Terminal 1)**
 
-```bash
-cd server
-npm install
-cd ..
-```
-
-### 4. Start Services
-
-**Terminal 1 - FastAPI ML Service:**
-```bash
-cd spam_filter/main
+```powershell
+cd ml-service\main
 python main.py
 ```
-Server runs at: http://localhost:8000
-Swagger docs: http://localhost:8000/docs
+✅ FastAPI runs at: http://localhost:8000
 
-**Terminal 2 - Node.js Gateway:**
-```bash
+**Step 3: Start Node.js Gateway (Terminal 2)**
+
+```powershell
 cd server
+npm install
 npm run dev
 ```
-Server runs at: http://localhost:5000
+✅ Gateway runs at: http://localhost:5000
 
 ---
 
-## API Endpoints
+## 📡 API Usage
 
-### Node.js Gateway (Port 5000)
+### Predict Spam via Gateway
 
-#### POST /api/predict
-Classify a message as spam or ham.
+**PowerShell:**
+```powershell
+$body = @{ text = "Congratulations! You won a free prize!" } | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:5000/api/predict" -Method Post -Body $body -ContentType "application/json"
+```
 
-**Request:**
-```json
-{
-  "text": "Congratulations! You won a prize"
-}
+**cURL:**
+```bash
+curl -X POST http://localhost:5000/api/predict \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Congratulations! You won a free prize!"}'
 ```
 
 **Response:**
 ```json
 {
-  "success": true,
-  "data": {
-    "message": "Congratulations! You won a prize",
-    "spam": true,
-    "confidence": 0.924
-  }
+  "message": "Congratulations! You won a free prize!",
+  "spam": true,
+  "confidence": 0.924
 }
 ```
 
-#### GET /api/health
-Check system health status.
+### Direct FastAPI Call
+
+```powershell
+$body = @{ text = "Hey, are we still meeting tomorrow?" } | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:8000/predict" -Method Post -Body $body -ContentType "application/json"
+```
 
 **Response:**
 ```json
 {
-  "success": true,
-  "timestamp": "2026-02-13T10:30:00.000Z",
-  "server": {
-    "status": "healthy",
-    "environment": "development"
-  },
-  "mlApi": {
-    "status": "healthy",
-    "url": "http://localhost:8000"
-  }
+  "message": "Hey, are we still meeting tomorrow?",
+  "spam": false,
+  "confidence": 0.987
 }
 ```
 
-### FastAPI ML Service (Port 8000)
+---
 
-#### POST /predict
-Direct ML prediction endpoint (also accessible via gateway).
+## 📁 Project Structure
 
-#### GET /
-Health check endpoint.
-
-#### GET /docs
-Interactive API documentation (Swagger UI).
+```
+spam-filter/
+├── ml-service/              # Python FastAPI service
+│   ├── main/
+│   │   └── main.py         # FastAPI application
+│   └── training/
+│       ├── train.py        # Model training script
+│       ├── spam.csv        # SMS spam dataset
+│       ├── model.pkl       # Trained model (generated)
+│       └── vectorizer.pkl  # TF-IDF vectorizer (generated)
+│
+├── server/                  # Node.js Express gateway
+│   ├── server.js           # Express server
+│   ├── controller/
+│   │   └── predict.controller.js
+│   └── .env                # Environment variables
+│
+├── Dockerfile              # Multi-service container
+├── start.sh               # Container startup script
+└── requirements.txt       # Python dependencies
+```
 
 ---
 
-## Environment Variables
+## 🔧 Configuration
 
-### Root `.env`
-```bash
-PORT=8000  # FastAPI port
+### Environment Variables
+
+**server/.env** (for local development):
+```env
+ML_API_URL=http://localhost:8000
+PORT=5000
+NODE_ENV=development
 ```
 
-### `server/.env`
-```bash
-PORT=5000              # Node.js server port
-NODE_ENV=development   # Environment mode
-ML_API_URL=http://localhost:8000  # FastAPI service URL
-```
+**Note:** For Docker, environment variables are automatically set during build.
 
 ---
 
-## Model Training
+## 🐳 Docker Details
 
-The training script includes:
-- Data preprocessing and cleaning
-- Train/test split (80/20)
-- TF-IDF vectorization with bigrams
-- Multinomial Naive Bayes training
-- Comprehensive evaluation metrics
-- Model and artifact persistence
+### What Happens When You Run Docker?
 
-**Retrain the model:**
-```bash
-cd spam_filter/training
+1. **Container starts** and builds Python + Node.js environment
+2. **Model is trained** during image build (or uses existing model)
+3. **FastAPI starts** on port 8000 (shows as 0.0.0.0:8000 inside container)
+4. **Node.js starts** on port 5000
+5. **Ports are exposed** to your host machine via `-p 8000:8000 -p 5000:5000`
+
+### Understanding 0.0.0.0 vs localhost
+
+| Address | Meaning | When to Use |
+|---------|---------|-------------|
+| `0.0.0.0` | Listen on all interfaces | Server binding (inside container) |
+| `localhost` | Your local machine | Client access (from browser/curl) |
+
+**Example:**
+- Container logs: `Uvicorn running on http://0.0.0.0:8000` ✅ (server binding)
+- You access: `http://localhost:8000` ✅ (from your machine)
+- Don't use: `http://0.0.0.0:8000` in browser ❌ (won't work properly)
+
+---
+
+## 🧪 Testing
+
+### Test Node.js Gateway
+```powershell
+curl http://localhost:5000/
+```
+
+### Test FastAPI Health
+```powershell
+curl http://localhost:8000/
+```
+
+### Test Prediction
+```powershell
+$spam = @{ text = "YOU WON $1000! Click here now!" } | ConvertTo-Json
+$ham = @{ text = "Meeting at 3pm tomorrow" } | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:5000/api/predict" -Method Post -Body $spam -ContentType "application/json"
+Invoke-RestMethod -Uri "http://localhost:5000/api/predict" -Method Post -Body $ham -ContentType "application/json"
+```
+
+### Interactive API Documentation
+
+Visit http://localhost:8000/docs for Swagger UI where you can:
+- See all endpoints
+- Test API calls directly
+- View request/response schemas
+
+---
+
+## 📊 Model Performance
+
+| Metric | Score |
+|--------|-------|
+| **Accuracy** | 95-98% |
+| **Precision** | ~96% |
+| **Recall** | ~94% |
+| **F1 Score** | ~95% |
+
+**Model Details:**
+- Algorithm: Multinomial Naive Bayes
+- Features: TF-IDF (unigrams + bigrams, max 5000 features)
+- Dataset: SMS Spam Collection (~5,500 messages)
+- Train/Test Split: 80/20 (stratified)
+
+---
+
+## 🔄 Retrain Model
+
+```powershell
+cd ml-service\training
 python train.py
 ```
 
-**Training outputs:**
+**Outputs:**
 - `model.pkl` - Trained classifier
-- `vectorizer.pkl` - Fitted TF-IDF vectorizer
+- `vectorizer.pkl` - TF-IDF vectorizer
 - `training_metrics.json` - Performance metrics
 
 ---
 
-## Docker Deployment
+## 🛠️ Troubleshooting
 
-### Build Image
-```bash
-docker build -t spam-api ./spam_filter
+### "Model files not found"
+```powershell
+cd ml-service\training
+python train.py
 ```
 
-### Run Container
-```bash
-docker run -p 8000:8000 spam-api
+### "Port already in use"
+```powershell
+# Find process using port 8000
+netstat -ano | findstr :8000
+
+# Kill the process (replace <PID> with actual ID)
+taskkill /PID <PID> /F
 ```
 
----
-
-## Production Deployment
-
-### Deploy FastAPI Service
-
-**Render/Railway/Cloud Run:**
-1. Push to GitHub
-2. Create new Web Service
-3. Select Docker deployment
-4. Set environment: `PORT=8000`
-5. Deploy
-
-### Deploy Node.js Gateway
-
-1. Push to hosting platform
-2. Install dependencies: `npm install`
-3. Set environment variables:
- > in server folder
-   - `ML_API_URL=<your-fastapi-url>`
-   - `NODE_ENV=production`
-4. Start: `npm start`
-
----
-
-## Development Features
-
-### Python Service
-- ✅ Type hints and Pydantic models
-- ✅ Configuration management
-- ✅ Comprehensive error handling
-- ✅ CORS enabled
-- ✅ Auto-generated API docs
-
-### Node.js Gateway
-- ✅ Request validation
-- ✅ Health monitoring
-- ✅ Environment-based configuration
-- ✅ CORS enabled
-
-### Model
-- ✅ TF-IDF with unigrams + bigrams
-- ✅ Stratified train/test split
-
-
----
-
-## Testing
-
-### Test FastAPI Service
-```bash
-curl -X POST http://localhost:8000/predict \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Win free lottery tickets now!"}'
+### "ML_API_URL not defined" (Docker)
+The Dockerfile automatically creates `.env` file. If error persists:
+```powershell
+# Rebuild image
+docker build -t spam-api .
 ```
 
-### Test Node.js Gateway
-```bash
-curl -X POST http://localhost:5000/api/predict \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Win free lottery tickets now!"}'
-```
+### "Cannot connect to ML API" (Local)
+1. Ensure FastAPI is running: `curl http://localhost:8000/`
+2. Check `server/.env` has: `ML_API_URL=http://localhost:8000`
+3. Verify both services are on correct ports
 
-### Check Health
-```bash
-curl http://localhost:5000/
+### Docker Container Immediately Exits
+```powershell
+# Check logs
+docker ps -a  # Find container ID
+docker logs <container_id>
+
+# Common fix: Rebuild with no cache
+docker build --no-cache -t spam-api .
 ```
 
 ---
 
-## Model Performance
+## 🌐 Production Deployment
 
-- **Algorithm**: Multinomial Naive Bayes
-- **Vectorizer**: TF-IDF (max 5000 features, 1-2 grams)
-- **Accuracy**: 95-98%
-- **Precision**: ~96%
-- **Recall**: ~94%
-- **F1 Score**: ~95%
+### Deploy on Render (Recommended)
 
----
+See detailed guide: **[RENDER_DEPLOY.md](RENDER_DEPLOY.md)**
 
-## Troubleshooting
+**Quick Steps:**
+1. Push code to GitHub
+2. Create Web Service on Render
+3. Connect GitHub repository
+4. Select Docker environment
+5. Deploy!
 
-### ML Service Not Starting
-```bash
-# Check if model files exist
-ls spam_filter/training/*.pkl
+Render will automatically:
+- Build the Docker image
+- Train the ML model
+- Start both services
+- Provide a public URL
 
-# If missing, retrain
-cd spam_filter/training && python train.py
-```
+**Important for Render:**
+- Only ONE port is exposed (Render's PORT, usually 10000)
+- Node.js gateway runs on public port
+- FastAPI runs internally on port 8000
+- Gateway proxies requests to FastAPI
 
-### Node.js Gateway Connection Issues
-```bash
-# Verify ML_API_URL in server/.env
-# Check if FastAPI is running on port 8000
-curl http://localhost:8000/
-```
+### Other Platforms (Railway/Heroku)
 
-### Port Already in Use
-```bash
-# Change ports in .env files
-# Or kill processes using the ports
-```
+The Docker setup works on any platform that supports Docker:
+- Railway: Same as Render
+- Heroku: Use `heroku.yml` or Docker deployment
+- DigitalOcean App Platform: Docker deployment
+- Google Cloud Run: Container deployment
 
 ---
 
-## License
+## 📝 Additional Resources
+
+- **Local Setup Guide**: See [LOCAL_SETUP.md](LOCAL_SETUP.md) for detailed instructions
+- **Refactoring Notes**: See [REFACTORING.md](REFACTORING.md) for code improvements
+
+---
+
+## 👨‍💻 Author
+
+**MUHAMMED HABEEB RAHMAN K T**  
+[GitHub](https://github.com/muh-habeeb)
+
+---
+
+## 📄 License
 
 MIT
-
-## Author
-MUHAMMED HABEEB RAHMAN K T
-[GITHUB](https://github.com/muh-habeeb)

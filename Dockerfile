@@ -32,6 +32,9 @@ RUN echo "ML_API_URL=http://localhost:8000" > /app/server/.env && \
 # Make startup script executable
 RUN chmod +x start.sh
 
+# Set environment for production
+ENV NODE_ENV=production
+
 # Expose ports
 EXPOSE 8000 5000
 

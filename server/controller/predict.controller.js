@@ -1,7 +1,7 @@
 import axios from "axios"
 
 const predict = (async (req, res) => {
-    
+    console.log(window.location)
     if(req.body === undefined || req.body.text === undefined) {
         return res.status(400).json({ error: "Invalid input, 'text' field is required" });
     }
